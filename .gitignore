@@ -1,0 +1,8 @@
+.DS_Store
+.idea
+*.log
+tmp/
+
+hydro
+obj/
+test_build/

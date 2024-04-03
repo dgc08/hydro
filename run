@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+make && echo || exit
+echo ---
+echo
+./hydro test.hy test_build/ && test_build/out
