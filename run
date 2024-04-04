@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 
-make && echo || exit
+cd $(dirname "$(readlink -f "$0")")
+
+make && echo || exit 1
 echo ---
 echo
-./hydro test.hy test_build/ && test_build/out
+./hydro test.hy test_build/ && echo || exit 1
+test_build/out
+echo "Exit code: $?"

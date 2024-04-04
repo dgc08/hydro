@@ -35,6 +35,9 @@ std::vector<Token> tokenize(const std::string& str){
       if (buf == "return") {
         token.type = TokenType::_return;
       }
+      else if (buf == "exit") {
+        token.type = TokenType::_exit;
+      }
       else {
         token.type = TokenType::identifier;
       }
@@ -50,7 +53,7 @@ std::vector<Token> tokenize(const std::string& str){
     }
     else if (c == ';') {
       token.value = ";";
-      token.type = TokenType::semi;
+      token.type = TokenType::sep;
 
       next(str);
     }

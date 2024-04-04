@@ -7,8 +7,9 @@
 enum class TokenType
 {
   _return,
+  _exit,
   int_lit,
-  semi,
+  sep,
   identifier
 };
 

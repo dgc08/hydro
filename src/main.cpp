@@ -4,6 +4,7 @@
 
 #include "include/assembler.h"
 #include "include/tokenizer.h"
+#include "include/parser.h"
 
 
 auto main(int argc, char** argv) -> int {
@@ -26,6 +27,16 @@ auto main(int argc, char** argv) -> int {
   }
 
   std::vector<Token> tokens = tokenize(source_code);
+
+  for (Token t : tokens) {
+    /*
+    if (t.type == TokenType::int_lit) std::cout << "Int lit @ "<< t.value << std::endl;
+    if (t.type == TokenType::_return) std::cout << "return @"<< t.value << std::endl;
+    if (t.type == TokenType::_exit) std::cout << "exit @ "<< t.value << std::endl;
+    if (t.type == TokenType::semi) std::cout << "semi @ "<< t.value << std::endl;
+    if (t.type == TokenType::identifier) std::cout << "idnt @ "<< t.value << std::endl;
+    */
+  }
 
   {
     std::fstream file(build_dir + "/out.asm", std::ios::out);

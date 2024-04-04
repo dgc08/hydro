@@ -1,0 +1,13 @@
+#+title: Grammar
+* Program
+** [statement, scope]*
+*** statement [builtins_directive, let]
+**** builtins
+1. return (expr *function type*  );
+2. exit (expr *int*);
+**** let
+1. let identifier = (expression);
+2. let identifier;
+3. var identifier = (expression);
+4. var identifier;
+5. identifier = (expression); # Only if declared as var
