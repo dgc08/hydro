@@ -1,10 +1,14 @@
 #!/usr/bin/env sh
 
+RED='\033[0;36m'
+NC='\033[0m' # No Color
+
 cd $(dirname "$(readlink -f "$0")")
 
-make && echo || exit 1
-echo ---
-echo
-./hydro test.hy test_build/ && echo || exit 1
+make && echo  || exit 1
+echo --- Make done ---
+./hydro test.hy test_build/ &&  echo  || exit 1
+echo --- Hydro build done ---
 test_build/out
-echo "Exit code: $?"
+
+printf "\n---\nBuilded program exited with ${RED}${?} ${NC}\n"

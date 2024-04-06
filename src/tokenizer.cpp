@@ -1,4 +1,5 @@
 #include "include/tokenizer.h"
+#include "include/keywords.h"
 
 #include <string>
 #include <iostream>
@@ -24,6 +25,7 @@ std::vector<Token> tokenize(const std::string& str){
   while (i < str.length()) {
     Token token;
 
+    // Identifiers & builtin_directives
     if (std::isalpha(c)) {
       while (std::isalnum(c)) {
           buf += c;
@@ -32,17 +34,10 @@ std::vector<Token> tokenize(const std::string& str){
 
       token.value = buf;
 
-      if (buf == "return") {
-        token.type = TokenType::_return;
-      }
-      else if (buf == "exit") {
-        token.type = TokenType::_exit;
-      }
-      else {
-        token.type = TokenType::identifier;
-      }
+      token.type = check_keyword(buf);
 
     }
+    // int_lit
     else if (std::isdigit(c)) {
       while (std::isdigit(c)) {
           buf += c;
@@ -51,6 +46,7 @@ std::vector<Token> tokenize(const std::string& str){
       token.value = buf;
       token.type = TokenType::int_lit;
     }
+    // SEP ;
     else if (c == ';') {
       token.value = ";";
       token.type = TokenType::sep;
@@ -62,7 +58,7 @@ std::vector<Token> tokenize(const std::string& str){
       continue;
     }
     else {
-      std::cout << "Error parsing '" << c << "': Aborting";
+      std::cout << "Error parsing '" << c << "' into token: Aborting";
       exit(1);
     }
 
@@ -71,5 +67,6 @@ std::vector<Token> tokenize(const std::string& str){
     buf.clear();
 
   }
+  tokens.push_back(Token{.type=TokenType::eof, .value=" "});
   return tokens;
 }

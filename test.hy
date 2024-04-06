@@ -1,2 +1,2 @@
-exit 5;
-return 69;
+print 5;
+return 70;

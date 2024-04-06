@@ -6,11 +6,12 @@
 
 enum class TokenType
 {
-  _return,
-  _exit,
+  builtin_directive,
   int_lit,
   sep,
-  identifier
+  identifier,
+
+  eof
 };
 
 struct Token
