@@ -11,8 +11,12 @@ enum class NodeType {
   scope,
   statement,
   expression,
+
   builtin_directive,
-  int_lit
+
+  int_lit,
+
+  identifier,
 };
 
 class AST {
@@ -35,7 +39,7 @@ class AST {
   private:
     void setup_parsing(std::vector<Token> tokens_arg);
 
-    int i;
+    size_t i;
     std::vector<Token> tokens;
     Token token_p;
     Token next();

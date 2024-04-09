@@ -51,6 +51,7 @@ void AST::parse_tokens(std::vector<Token> tokens_arg) {
 
   _type = NodeType::scope;
   _value = "global";
+
   std::vector<Token> buf;
 
   while (token_p.type != TokenType::eof) {
@@ -92,13 +93,34 @@ void AST::parse_statement(std::vector<Token> tokens_arg) {
   switch (token_p.type) {
     case TokenType::builtin_directive:
       directive.set_base_token(NodeType::builtin_directive, token_p.value);
+      content.push_back(directive);
+      if (token_p.value == "let") {
+        next();
+        if (token_p.type != TokenType::identifier) {
+          std::cout << "Expected identifier not '" << token_p.value <<"'" << std::endl;
+          exit(0);
+        }
+        AST identifier;
+        identifier.set_base_token(NodeType::identifier, token_p.value);
+        content.push_back(identifier);
+
+        next();
+        if (token_p.value != "=") {
+          std::cout << "Expected '=' not '" << token_p.value <<"'" << std::endl;
+        }
+        next();
+      }
+      else {
+        next();
+      }
       break;
-    case TokenType::identifier:
-      std::cout << "Can't parse anything else than just builtin directives as statements" << std::endl;
+    case TokenType::eof:
+      return;
+    default:
+      std::cout << "Can't parse anything else than just builtin directives as statements, got " << token_p.value << std::endl;
       break;
   }
-  content.push_back(directive);
-  tokens.erase(tokens.begin());
+  tokens.erase(tokens.begin(), tokens.begin() + i);
 
 
   AST expression;
@@ -124,8 +146,17 @@ void AST::parse_expression(std::vector<Token> tokens_arg) {
         tokens.clear();
         break;
       }
+    case TokenType::identifier:
+      if (tokens.size() == 1) {
+        AST lit;
+        lit.set_base_token(NodeType::identifier, token_p.value);
+        content.push_back(lit);
+
+        tokens.clear();
+        break;
+      }
     default:
-      std::cout << "Can't parse anything else than just one int into expr rn" << std::endl;
+      std::cout << "Can't parse anything else than just one int into expr rn, got " << token_p.value  << std::endl;
   }
 }
 

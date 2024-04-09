@@ -1,5 +1,5 @@
 #include "include/generator.h"
-#include "include/section_stream.h"
+#include "include/ASM_manager.h"
 #include "include/keywords.h"
 
 #include <string>
@@ -19,6 +19,9 @@ main:
     syscall         ; invoke syscall
 
 _hy_main:              ; main
+    push rbp
+    mov rbp, rsp
+
 %MAIN%
 )";
 
@@ -26,9 +29,6 @@ _hy_main:              ; main
 std::string assembleTemplate(std::string main, std::string data, std::string text) {
   if (main == "") {
     main = "    mov eax, 0\n    ret";
-  }
-  else {
-    main = "    mov rbp, rsp\n" + main;
   }
 
   if (data != "") {
@@ -45,23 +45,16 @@ std::string assembleTemplate(std::string main, std::string data, std::string tex
 }
 
 
-void add_instr(std::stringstream& stream, std::string data) {
-  stream << "    " << data << "\n";
-}
-
-
 AST& peek_ast(std::vector<AST>& contents, size_t pos, size_t peek) {
   if (pos+peek <= contents.size()) {
     return contents[pos+peek];
   }
 }
-void process_statement(AST& astree, std::stringstream& main, Section_Stream& data, Section_Stream& text);
-DataType expression_to_rax(AST& astree, std::stringstream& main, Section_Stream& data, Section_Stream& text);
+void process_statement(AST& astree, ASM_manager& asm_m);
+size_t expression_to_rax(AST& astree, ASM_manager& asm_m);
 
 std::string assemble_from_ast(const AST astree) {
-  std::stringstream main;
-  Section_Stream data;
-  Section_Stream text;
+  ASM_manager asm_m;
 
   if ((astree.type() != NodeType::scope) && (astree.value() != "global")) {
     std::cout << "Code generator got passed an AST that isn't global scope" << std::endl;
@@ -74,17 +67,17 @@ std::string assemble_from_ast(const AST astree) {
 
     switch (astree_item.type()) {
       case NodeType::statement:
-        process_statement(astree_item, main, data, text);
+        process_statement(astree_item, asm_m);
         break;
       default:
         std::cout << "Can't parse anything else yet" << std::endl;
         exit(1);
     }
   }
-  return assembleTemplate(main.str(), data.str(), text.str());
+  return assembleTemplate(asm_m.str_main(), asm_m.str_data(), asm_m.str_text());
 }
 
-void process_statement(AST& astree, std::stringstream& main, Section_Stream& data, Section_Stream& text) {
+void process_statement(AST& astree, ASM_manager& asm_m) {
   std::vector<AST> contents = astree.get_tree();
   for (size_t i = 0; i < astree.size(); i++) {
     AST& astree_item = contents[i];
@@ -93,58 +86,76 @@ void process_statement(AST& astree, std::stringstream& main, Section_Stream& dat
       case NodeType::builtin_directive:
         if (astree_item.value() == "exit" && peek_ast(contents, i, 1).type() == NodeType::expression) {
           i++;
-          expression_to_rax(contents[i], main, data, text);
-          add_instr(main, "mov edi, eax");
-          add_instr(main, "mov eax, 60");
-          add_instr(main, "syscall");
+          expression_to_rax(contents[i], asm_m);
+          asm_m.add_instr_main("mov edi, eax");
+          asm_m.add_instr_main("mov eax, 60");
+          asm_m.add_instr_main("syscall");
         }
         else if (astree_item.value() == "return" && peek_ast(contents, i, 1).type() == NodeType::expression) {
           i++;
-          expression_to_rax(contents[i], main, data, text);
-          add_instr(main, "pop rbp");
-          add_instr(main, "ret");
+          expression_to_rax(contents[i], asm_m);
+          asm_m.add_instr_main("jmp _hy_main_ret");
+        }
+        else if (astree_item.value() == "let" && peek_ast(contents, i, 1).type() == NodeType::identifier && peek_ast(contents, i, 2).type() == NodeType::expression) {
+          i++;
+          std::string ident = contents[i].value();
+          i++;
+
+          size_t type = expression_to_rax(contents[i], asm_m);
+
+          Mem_location loc = asm_m.define_local_var(ident, type);
+
+          std::stringstream locale;
+          locale << "mov [rsp+" << loc.offset << "], eax";
+          asm_m.add_instr_main(locale.str());
         }
         else if (astree_item.value() == "print" && peek_ast(contents, i, 1).type() == NodeType::expression) {
           i++;
-          text.add_instr("extern printf", "extern printf");
+          asm_m.add_instr_text("printf", "extern printf");
 
-          DataType type = expression_to_rax(contents[i], main, data, text);
+          size_t type = expression_to_rax(contents[i], asm_m);
 
           std::string fmt;
           switch (type) {
-            case DataType::i32:
+            case 4:
               fmt = "_hy_fmt_digit";
-              data.add_instr(fmt, fmt+"    db \"%d\", 10, 0");
+              asm_m.add_instr_data(fmt, fmt+"    db \"%d\", 10, 0");
               break;
-            case DataType::i64:
+            case 64:
               fmt = "_hy_fmt_digit_i64";
-              data.add_instr(fmt, fmt+"    db \"%lld\", 10, 0");
+              asm_m.add_instr_data(fmt, fmt+"    db \"%lld\", 10, 0");
               break;
           }
 
 
-          add_instr(main, "mov rsi, rax");
-          add_instr(main, "mov rdi, _hy_fmt_digit");
-          add_instr(main, "xor rax, rax");
-          add_instr(main, "call printf wrt ..plt");
+          asm_m.add_instr_main("mov rsi, rax");
+          asm_m.add_instr_main("mov rdi, _hy_fmt_digit");
+          asm_m.add_instr_main("xor rax, rax");
+          asm_m.add_instr_main("call printf wrt ..plt");
         }
 
 
         break;
       default:
-        std::cout << "Can't parse anything else than just builtin directives as statements" << std::endl;
+        std::cout << "Can't parse anything else than just builtin directives as statements, got "<< astree_item.value() << std::endl;
         break;
     }
   }
 }
 
-DataType expression_to_rax(AST& astree, std::stringstream& main, Section_Stream& data, Section_Stream& text) {
+size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
   std::vector<AST> contents = astree.get_tree();
   if (astree.size() == 1) {
     switch (contents[0].type()) {
     case NodeType::int_lit:
-      add_instr(main, "mov eax, " + contents[0].value());
-      return DataType::i32;
+      asm_m.add_instr_main("mov eax, " + contents[0].value());
+      return 4;
+    case NodeType::identifier:
+      {
+        Mem_location loc = asm_m.get_local_var(contents[0].value());
+        asm_m.add_instr_main("mov rax, [rsp + " + std::to_string(loc.offset) + "]");
+        break;
+      }
     default:
       std::cout << "Can't parse anything else than just one int into expr rn" << std::endl;
     }

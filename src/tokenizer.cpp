@@ -47,8 +47,8 @@ std::vector<Token> tokenize(const std::string& str){
       token.type = TokenType::int_lit;
     }
     // SEP ;
-    else if (c == ';') {
-      token.value = ";";
+    else if (c == ';' or c == '=') {
+      token.value = c;
       token.type = TokenType::sep;
 
       next(str);

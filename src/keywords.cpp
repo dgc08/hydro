@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-const std::vector<std::string> KEYWORDS_DIRECTIVE = {"exit", "return", "print"};
+const std::vector<std::string> KEYWORDS_DIRECTIVE = {"exit", "return", "print", "let"};
 
 
 bool in_vec (const std::vector<std::string>& vec, std::string target) {

@@ -1,16 +1,19 @@
-/* #include "test.h" */
 #include <stdio.h>
 
-int glb;
+int main() {
+    int myInt = 42; // Define an integer and initialize it with a value (e.g., 42)
 
-void modi() {
-  glb = 2;
-}
+    // Inline assembly to move 0 to all registers
+    asm volatile (
+        "xor %%eax, %%eax \n\t"
+        "xor %%ebx, %%ebx \n\t"
+        "xor %%ecx, %%ecx \n\t"
+        "xor %%edx, %%edx \n\t"
+        :
+        :
+        : "eax", "ebx", "ecx", "edx"
+    );
 
-int main(int argc, char** argv ) {
-  int lc_main = glb;
-  lc_main = lc_main + 1;
-  glb = lc_main;
-  modi();
-  printf("%d", glb);
+    printf("myInt: %d\n", myInt); // Print the integer
+    return 0;
 }
