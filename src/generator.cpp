@@ -12,16 +12,16 @@ section .text
 %TEXT%
 
 main:
-    call _hy_main       ; Call the extra main label
+    mov rcx, 0xFFFFFFFF
+    push rcx
+    call _hy_main
+    pop rcx
 
     mov edi, eax    ; mov return value from main
     mov rax, 60     ; syscall number for sys_exit
     syscall         ; invoke syscall
 
 _hy_main:              ; main
-    push rbp
-    mov rbp, rsp
-
 %MAIN%
 )";
 
@@ -55,6 +55,7 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m);
 
 std::string assemble_from_ast(const AST astree) {
   ASM_manager asm_m;
+  asm_m.return_from_scope = true;
 
   if ((astree.type() != NodeType::scope) && (astree.value() != "global")) {
     std::cout << "Code generator got passed an AST that isn't global scope" << std::endl;
@@ -105,8 +106,19 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
 
           Mem_location loc = asm_m.define_local_var(ident, type);
 
+          std::string word_type = "Undefined please nasm throw an error";
+
+          switch (type) {
+            case 4:
+              word_type = "";
+              break;
+          case 8:
+              word_type = "QWORD";
+              break;
+          }
+
           std::stringstream locale;
-          locale << "mov [rsp+" << loc.offset << "], eax";
+          locale << "mov " << word_type << " [rbp-" << loc.offset+loc.size << "], eax";
           asm_m.add_instr_main(locale.str());
         }
         else if (astree_item.value() == "print" && peek_ast(contents, i, 1).type() == NodeType::expression) {
@@ -121,7 +133,7 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
               fmt = "_hy_fmt_digit";
               asm_m.add_instr_data(fmt, fmt+"    db \"%d\", 10, 0");
               break;
-            case 64:
+            case 8:
               fmt = "_hy_fmt_digit_i64";
               asm_m.add_instr_data(fmt, fmt+"    db \"%lld\", 10, 0");
               break;
@@ -153,8 +165,18 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
     case NodeType::identifier:
       {
         Mem_location loc = asm_m.get_local_var(contents[0].value());
-        asm_m.add_instr_main("mov rax, [rsp + " + std::to_string(loc.offset) + "]");
-        break;
+        std::string word_type = "Undefined please nasm throw an error";
+
+          switch (loc.size) {
+              case 4:
+                  word_type = "";
+                  break;
+              case 8:
+                word_type = "QWORD";
+                break;
+          }
+        asm_m.add_instr_main("mov " + word_type + " rax, [rbp-" + std::to_string(loc.offset+loc.size) + "]");
+        return loc.size;
       }
     default:
       std::cout << "Can't parse anything else than just one int into expr rn" << std::endl;
@@ -162,3 +184,4 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
 
   }
 }
+// x/10x $sp

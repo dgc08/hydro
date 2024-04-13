@@ -1,7 +1,9 @@
-let y = 5;
-let x = 6;
-let z = 3;
-let a = 2;
+let x = 1;
+let y = 2;
+let a = 3;
+let b = 4;
+print x;
 print y;
-print 55;
+print a;
+print b;
 return 70;

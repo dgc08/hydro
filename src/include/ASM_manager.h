@@ -13,6 +13,7 @@ struct Mem_location {
 
 class ASM_manager {
   public:
+    bool return_from_scope = false;
     inline void add_instr_text(std::string key, std::string value) {add_instr_backend(key, value, &map_text, &stream_text);}
     inline void add_instr_data(std::string key, std::string value) {add_instr_backend(key, value, &map_data, &stream_data);}
     inline void add_instr_main(std::string value) {stream_main << "    " << value << "\n";}

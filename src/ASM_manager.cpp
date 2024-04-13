@@ -1,6 +1,7 @@
 #include "include/ASM_manager.h"
 
 #include <algorithm>
+#include <iostream>
 
 void ASM_manager::add_instr_backend(std::string key, std::string value, std::unordered_map<std::string, std::string> *map, std::stringstream *stream) {
   if(map -> find(key) != map -> end()) {
@@ -35,13 +36,17 @@ std::string ASM_manager::str_main() {
       std::stringstream post;
       post << "_hy_main_ret:\n";
       if (scope_size != 0) {
-        char fill = (8 - scope_size % 8);
-        if (fill == 8) {
+        char fill = (16 - scope_size % 16);
+        if (fill == 16) {
           fill = 0;
         }
-        pre << "    sub rsp, " << scope_size + fill << "\n";
-        post << "    add rsp, " << scope_size + fill << "\n";
+        scope_size += fill;
+
+        pre << "    push rbp\n    mov rbp, rsp\n";
+        pre << "    sub rsp, " << scope_size << "\n";
+        post << "    add rsp, " << scope_size << "\n";
       }
-      post << "    pop rbp\n    ret";
+      post << "    pop rbp\n";
+      if (return_from_scope) post << "    ret";
       return pre.str() + stream_main.str() + post.str();
 }
