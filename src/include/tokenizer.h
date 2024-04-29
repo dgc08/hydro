@@ -10,6 +10,7 @@ enum class TokenType
   int_lit,
   sep,
   identifier,
+  op,
 
   eof
 };

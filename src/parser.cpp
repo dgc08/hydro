@@ -26,7 +26,7 @@ Token AST::get_base_token() {
 
 Token AST::next() {
   i++;
-  if (i > tokens.size()) {
+  if (i >= tokens.size()) {
     token_p = Token{.type=TokenType::eof, .value=" "};
   }
   else {
@@ -79,6 +79,7 @@ void AST::parse_tokens(std::vector<Token> tokens_arg) {
         exit(1);
     }
   }
+  tokens.clear();
 }
 
 
@@ -134,30 +135,100 @@ void AST::parse_expression(std::vector<Token> tokens_arg) {
   setup_parsing (tokens_arg);
 
   _type = NodeType::expression;
-  _value = token_p.value;
+  _value = "lit";
 
-  switch (token_p.type) {
-    case TokenType::int_lit:
-      if (tokens.size() == 1) {
-        AST lit;
-        lit.set_base_token(NodeType::int_lit, token_p.value);
-        content.push_back(lit);
+  if (token_p.value == "(") {
+    next();
 
-        tokens.clear();
-        break;
+    std::vector<Token> buf;
+    int nestings = 1;
+    while (nestings > 0) {
+      buf.push_back(token_p);
+
+      if (token_p.type == TokenType::eof) {
+        std::cout << "No closing ) found, nestings: " << nestings << std::endl;
+        exit(1);
       }
-    case TokenType::identifier:
-      if (tokens.size() == 1) {
-        AST lit;
-        lit.set_base_token(NodeType::identifier, token_p.value);
-        content.push_back(lit);
+      else if  (token_p.value == "(") nestings++;
 
-        tokens.clear();
-        break;
-      }
-    default:
-      std::cout << "Can't parse anything else than just one int into expr rn, got " << token_p.value  << std::endl;
+      next();
+      if  (token_p.value == ")") nestings--;
+    }
+
+    {
+      AST expression;
+      expression.parse_expression(buf);
+      content.push_back(expression);
+    }
+    buf.clear();
+
+    next();
+
+    if (token_p.type != TokenType::op) {
+      if (token_p.type == TokenType::eof) return;
+      else std::cout << "Unexpected " << token_p.value << ", expected operator or eof" << std::endl ; exit(1);
+    }
+
+    parse_operator();
   }
+  else if (tokens.size() == 1) {
+    switch (token_p.type) {
+      case TokenType::int_lit:
+        {
+          AST lit;
+          lit.set_base_token(NodeType::int_lit, token_p.value);
+          content.push_back(lit);
+
+          tokens.erase(tokens.begin(), tokens.begin() + i);
+          break;
+        }
+      case TokenType::identifier:
+        {
+          AST lit;
+          lit.set_base_token(NodeType::identifier, token_p.value);
+          content.push_back(lit);
+
+          tokens.erase(tokens.begin(), tokens.begin() + i);
+        }
+        break;
+      default:
+        std::cout << "Can't parse anything else than ints and identifiers into expr rn, got " << token_p.value  << std::endl;
+    }
+  }
+  else {
+    if (token_p.type == TokenType::int_lit || token_p.type == TokenType::identifier) {
+      {
+        AST expression;
+        expression.parse_expression({token_p});
+        content.push_back(expression);
+      }
+      next();
+
+      if (token_p.type != TokenType::op) {
+        std::cout << "Expected operator, got " << token_p.value  << std::endl;
+        exit(1);
+      }
+
+      parse_operator();
+    }
+  }
+}
+
+void AST::parse_operator() {
+    _value = token_p.value;
+
+    next();
+    if (i == tokens.size()) {
+      std::cout << "Unexpected eof, expected expression" << std::endl ; exit(1);
+    }
+    tokens.erase(tokens.begin(), tokens.begin() + i);
+
+    {
+        AST expression;
+        expression.parse_expression(tokens);
+        content.push_back(expression);
+    }
+    tokens.clear();
 }
 
 void AST::set_base_token(NodeType type, std::string value) {

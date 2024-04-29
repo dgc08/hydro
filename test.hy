@@ -1,9 +1,2 @@
-let x = 1;
-let y = 2;
-let a = 3;
-let b = 4;
-print x;
-print y;
-print a;
-print b;
-return 70;
+let vg = ((4 - (5 + 5)) + 10);
+return vg;

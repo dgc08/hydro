@@ -28,15 +28,6 @@ auto main(int argc, char** argv) -> int {
 
   std::vector<Token> tokens = tokenize(source_code);
 
-  for (Token t : tokens) {
-    /*
-    if (t.type == TokenType::int_lit) std::cout << "Int lit @ "<< t.value << std::endl;
-    if (t.type == TokenType::builtin_directive) std::cout << "return @"<< t.value << std::endl;
-    if (t.type == TokenType::sep) std::cout << "semi @ "<< t.value << std::endl;
-    if (t.type == TokenType::identifier) std::cout << "idnt @ "<< t.value << std::endl;
-    */
-  }
-
   AST astree;
   astree.parse_tokens(tokens);
   tokens.clear();

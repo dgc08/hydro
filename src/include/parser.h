@@ -38,6 +38,7 @@ class AST {
 
   private:
     void setup_parsing(std::vector<Token> tokens_arg);
+    inline void parse_operator();
 
     size_t i;
     std::vector<Token> tokens;

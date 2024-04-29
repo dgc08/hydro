@@ -157,7 +157,7 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
 
 size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
   std::vector<AST> contents = astree.get_tree();
-  if (astree.size() == 1) {
+  if (astree.value() == "lit") {
     switch (contents[0].type()) {
     case NodeType::int_lit:
       asm_m.add_instr_main("mov eax, " + contents[0].value());
@@ -178,10 +178,37 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
         asm_m.add_instr_main("mov " + word_type + " rax, [rbp-" + std::to_string(loc.offset+loc.size) + "]");
         return loc.size;
       }
+    case NodeType::expression:
+      return expression_to_rax(contents[0], asm_m);
     default:
-      std::cout << "Can't parse anything else than just one int into expr rn" << std::endl;
+      std::cout << "Got invalid lit" << std::endl;
     }
-
   }
+  else if (astree.value() == "+" && astree.size() == 2) {
+    size_t size = expression_to_rax(contents[1], asm_m);
+    asm_m.add_instr_main("push rax");
+
+    size_t size2 = expression_to_rax(contents[0], asm_m);
+    asm_m.add_instr_main("pop rbx");
+    asm_m.add_instr_main("add rax, rbx");
+
+    if (size2 > size) return size2;
+    return size;
+  }
+  else if (astree.value() == "-" && astree.size() == 2) {
+    size_t size = expression_to_rax(contents[1], asm_m);
+    asm_m.add_instr_main("push rax");
+
+    size_t size2 = expression_to_rax(contents[0], asm_m);
+    asm_m.add_instr_main("pop rbx");
+    asm_m.add_instr_main("sub rax, rbx");
+
+    if (size2 > size) return size2;
+    return size;
+  }
+
+  std::cout << "PANICKING: expression_to_rax didn't return. There is some serious shit going on, not with your code but with hydro itself." << std::endl;
+  std::cout << astree.value()<< std::endl;
+  exit(1);
 }
 // x/10x $sp

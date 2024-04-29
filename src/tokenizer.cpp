@@ -46,10 +46,17 @@ std::vector<Token> tokenize(const std::string& str){
       token.value = buf;
       token.type = TokenType::int_lit;
     }
-    // SEP ;
-    else if (c == ';' or c == '=') {
+    // SEP
+    else if (c == ';' || c == '=' || c == '(' || c == ')') {
       token.value = c;
       token.type = TokenType::sep;
+
+      next(str);
+    }
+    // OP
+    else if (c == '+' || c == '-') {
+      token.value = c;
+      token.type = TokenType::op;
 
       next(str);
     }
