@@ -166,7 +166,7 @@ void AST::parse_expression(std::vector<Token> tokens_arg) {
 
     if (token_p.type != TokenType::op) {
       if (token_p.type == TokenType::eof) return;
-      else std::cout << "Unexpected " << token_p.value << ", expected operator or eof" << std::endl ; exit(1);
+      else {std::cout << "Unexpected " << token_p.value << ", expected operator or eof" << std::endl ; exit(1);}
     }
 
     parse_operator();

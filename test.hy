@@ -1,2 +1,4 @@
-let vg = ((4 - (5 + 5)) + 10);
-return vg;
+let vg = 11;
+print vg;
+let x = vg / 11;
+print x;

@@ -166,16 +166,21 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
       {
         Mem_location loc = asm_m.get_local_var(contents[0].value());
         std::string word_type = "Undefined please nasm throw an error";
+        std::string reg = "Undefined please nasm throw an error";
 
           switch (loc.size) {
               case 4:
                   word_type = "";
+                  reg = "eax";
+                  //asm_m.add_instr_main("xor rax, rax");
+                  asm_m.add_instr_main("mov   rax, 0xFFFFFFFFFFFFFFFF");
                   break;
               case 8:
                 word_type = "QWORD";
+                reg = "rax";
                 break;
           }
-        asm_m.add_instr_main("mov " + word_type + " rax, [rbp-" + std::to_string(loc.offset+loc.size) + "]");
+        asm_m.add_instr_main("mov " + word_type + " " + reg + ", [rbp-" + std::to_string(loc.offset+loc.size) + "]");
         return loc.size;
       }
     case NodeType::expression:
@@ -206,9 +211,30 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
     if (size2 > size) return size2;
     return size;
   }
+  else if (astree.value() == "*" && astree.size() == 2) {
+    size_t size = expression_to_rax(contents[1], asm_m);
+    asm_m.add_instr_main("push rax");
+
+    size_t size2 = expression_to_rax(contents[0], asm_m);
+    asm_m.add_instr_main("pop rbx");
+    asm_m.add_instr_main("imul rax, rbx");
+
+    if (size2 > size) return size2;
+    return size;
+  }
+  else if (astree.value() == "/" && astree.size() == 2) {
+    size_t size = expression_to_rax(contents[1], asm_m);
+    asm_m.add_instr_main("push rax");
+
+    size_t size2 = expression_to_rax(contents[0], asm_m);
+    asm_m.add_instr_main("pop rbx");
+    asm_m.add_instr_main("idiv rbx");
+
+    if (size2 > size) return size2;
+    return size;
+  }
 
   std::cout << "PANICKING: expression_to_rax didn't return. There is some serious shit going on, not with your code but with hydro itself." << std::endl;
   std::cout << astree.value()<< std::endl;
   exit(1);
 }
-// x/10x $sp

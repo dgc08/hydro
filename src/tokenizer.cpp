@@ -54,7 +54,7 @@ std::vector<Token> tokenize(const std::string& str){
       next(str);
     }
     // OP
-    else if (c == '+' || c == '-') {
+    else if (c == '+' || c == '-' || c == '*' || c == '/') {
       token.value = c;
       token.type = TokenType::op;
 
