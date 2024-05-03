@@ -25,9 +25,16 @@ std::vector<Token> tokenize(const std::string& str){
   while (i < str.length()) {
     Token token;
 
+    // Comments
+    if (c == '#') {
+      while (c != '\n') {
+        next(str);
+      }
+      continue;
+    }
     // Identifiers & builtin_directives
-    if (std::isalpha(c)) {
-      while (std::isalnum(c)) {
+    else if (std::isalpha(c) || c == '$' || c == '_') {
+      while (std::isalnum(c) || c == '$' || c == '_') {
           buf += c;
           next(str);
       }

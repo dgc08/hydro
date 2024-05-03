@@ -12,10 +12,9 @@ section .text
 %TEXT%
 
 main:
-    mov rcx, 0xFFFFFFFF
-    push rcx
+    push rsi
+    push rdi
     call _hy_main
-    pop rcx
 
     mov edi, eax    ; mov return value from main
     mov rax, 60     ; syscall number for sys_exit
@@ -93,7 +92,7 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
           asm_m.add_instr_main("syscall");
         }
         else if (astree_item.value() == "return" && peek_ast(contents, i, 1).type() == NodeType::expression) {
-          i++;
+         i++;
           expression_to_rax(contents[i], asm_m);
           asm_m.add_instr_main("jmp _hy_main_ret");
         }
@@ -146,7 +145,6 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
           asm_m.add_instr_main("call printf wrt ..plt");
         }
 
-
         break;
       default:
         std::cout << "Can't parse anything else than just builtin directives as statements, got "<< astree_item.value() << std::endl;
@@ -164,6 +162,18 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
       return 4;
     case NodeType::identifier:
       {
+        if (contents[0].value()[0] == '$') {
+          if (std::isalpha(contents[0].value()[1])) {
+            asm_m.add_instr_main("mov rax, " + contents[0].value().substr(1));
+            return 8;
+          }
+          else if (std::isdigit(contents[0].value()[1])) {
+            int offset = 24 + std::stoi(contents[0].value().substr(1)) * 8;
+            asm_m.add_instr_main("mov rax, [rbp+" + std::to_string(offset) + "]");
+            return 8;
+          }
+        }
+
         Mem_location loc = asm_m.get_local_var(contents[0].value());
         std::string word_type = "Undefined please nasm throw an error";
         std::string reg = "Undefined please nasm throw an error";
@@ -173,7 +183,6 @@ size_t expression_to_rax(AST& astree, ASM_manager& asm_m) {
                   word_type = "";
                   reg = "eax";
                   //asm_m.add_instr_main("xor rax, rax");
-                  asm_m.add_instr_main("mov   rax, 0xFFFFFFFFFFFFFFFF");
                   break;
               case 8:
                 word_type = "QWORD";

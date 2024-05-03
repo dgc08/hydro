@@ -3,6 +3,8 @@ section .text
     extern printf
 
 main:
+    mov rax, 69
+    push rax
     call main_hy
 
     mov rdi, rax                ; store return value of main_hy in rdi, which is exit code
@@ -10,6 +12,7 @@ main:
     syscall
 
 main_hy:
+    push rbp
     mov rbp, rsp
     ; Write message to stdout
     mov rax, 1             ; syscall number for sys_write
@@ -18,10 +21,11 @@ main_hy:
     mov rdx, msglen        ; message length
     syscall                ; invoke syscall
 
+    mov rax, [rbp+16]
 
     ; Prepare arguments for printf
     mov rdi, fmt           ; format string
-    mov rsi, 2             ; second argument for printf (just an example)
+    mov rsi, rax           ; second argument for printf (just an example)
     xor rax, rax
     ; Call printf
     call printf wrt ..plt
