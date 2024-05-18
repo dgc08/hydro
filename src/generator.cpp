@@ -72,13 +72,17 @@ void process_scope(AST astree, ASM_manager& asm_m) {
   std::vector<AST> contents = astree.get_tree();
   for (size_t i = 0; i < astree.size(); i++) {
     AST& astree_item = contents[i];
-
     switch (astree_item.type()) {
       case NodeType::statement:
         process_statement(astree_item, asm_m);
         break;
+      case NodeType::label:
+        i++;
+        asm_m.add_instr_main(astree_item.value() + ":");
+        astree_item = contents[i];
+        break;
       default:
-        std::cout << "Can't parse anything else yet" << std::endl;
+        std::cout << "Can't generate anything else than statements yet (process_scope), got " <<  astree_item.value() << std::endl;
         exit(1);
     }
   }
@@ -100,10 +104,21 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
           asm_m.add_instr_main("syscall");
         }
         // return directive implementation
-        else if (astree_item.value() == "return" && peek_ast(contents, i, 1).type() == NodeType::expression) {
-         i++;
+        else if ((astree_item.value() == "return")  && peek_ast(contents, i, 1).type() == NodeType::expression) {
+          i++;
           expression_to_rax(contents[i], asm_m);
           asm_m.add_instr_main("jmp _hy_main_ret");
+        }
+        // call directive implementation
+        else if ((astree_item.value() == "call" && peek_ast(contents, i, 1).type() == NodeType::expression)) {
+          i++;
+          asm_m.add_instr_main("call _hy_user_" + contents[i].get_tree()[0].value());
+        }
+        // end directive implementation
+        else if ((astree_item.value() == "end")) {
+          // if (peek_ast(contents, i, 1).type() == NodeType::expression) expression_to_rax(contents[i], asm_m);
+          i++;
+          asm_m.add_instr_main("ret");
         }
         // let directive implementation
         else if (astree_item.value() == "let" && peek_ast(contents, i, 1).type() == NodeType::identifier && peek_ast(contents, i, 2).type() == NodeType::expression) {
@@ -182,7 +197,7 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
 
         break;
       default:
-        std::cout << "Can't parse anything else than just builtin directives as statements, got "<< astree_item.value() << std::endl;
+        std::cout << "Can't generate anything else than just builtin directives as statements, got "<< astree_item.value() << std::endl;
         break;
     }
   }

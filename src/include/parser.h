@@ -13,6 +13,7 @@ enum class NodeType {
   expression,
 
   builtin_directive,
+  label,
 
   int_lit,
 

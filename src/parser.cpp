@@ -7,6 +7,7 @@
 #include "include/parser.h"
 #include "include/tokenizer.h"
 
+/*
 Token AST::get_base_token() {
   Token token;
   if (is_base_token()) {
@@ -22,7 +23,7 @@ Token AST::get_base_token() {
 
   return token;
 }
-
+*/
 
 Token AST::next() {
   i++;
@@ -73,7 +74,19 @@ void AST::parse_tokens(std::vector<Token> tokens_arg) {
           content.push_back(statement);
           break;
         }
-
+      case TokenType::sep:
+        if (token_p.value == ":") {
+          next();
+          if (token_p.type != TokenType::identifier) {
+            std::cout << "Found label with no name" << std::endl;
+            exit(1);
+          }
+          AST label;
+          label.set_base_token(NodeType::label, "_hy_user_" + token_p.value);
+          next();
+          content.push_back(label);
+          break;
+        }
       default:
         std::cout << "Can't parse anything else than just directives (theoretically but no actually identifiers) as top level tokens" << std::endl;
         exit(1);
@@ -118,7 +131,7 @@ void AST::parse_statement(std::vector<Token> tokens_arg) {
     case TokenType::eof:
       return;
     default:
-      std::cout << "Can't parse anything else than just builtin directives as statements, got " << token_p.value << std::endl;
+      std::cout << "Can't parse anything else than just builtin directives as statements (in parser), got " << token_p.value << std::endl;
       break;
   }
   tokens.erase(tokens.begin(), tokens.begin() + i);
