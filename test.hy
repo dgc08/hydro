@@ -1,5 +1,6 @@
                             # Hello good evening i love it when comments are not working
 let number = 11;
+set number = 14;
 print number;
 let result =  number / 3;
 print $rdx;                 # Direct access to the rdx register, which holds the remainder of the division

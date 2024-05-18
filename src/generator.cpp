@@ -49,6 +49,8 @@ AST& peek_ast(std::vector<AST>& contents, size_t pos, size_t peek) {
     return contents[pos+peek];
   }
 }
+
+void process_scope(AST astree, ASM_manager& asm_m);
 void process_statement(AST& astree, ASM_manager& asm_m);
 size_t expression_to_rax(AST& astree, ASM_manager& asm_m);
 
@@ -61,6 +63,12 @@ std::string assemble_from_ast(const AST astree) {
     exit(1);
   }
 
+  process_scope(astree, asm_m);
+
+  return assembleTemplate(asm_m.str_main(), asm_m.str_data(), asm_m.str_text());
+}
+
+void process_scope(AST astree, ASM_manager& asm_m) {
   std::vector<AST> contents = astree.get_tree();
   for (size_t i = 0; i < astree.size(); i++) {
     AST& astree_item = contents[i];
@@ -74,7 +82,6 @@ std::string assemble_from_ast(const AST astree) {
         exit(1);
     }
   }
-  return assembleTemplate(asm_m.str_main(), asm_m.str_data(), asm_m.str_text());
 }
 
 void process_statement(AST& astree, ASM_manager& asm_m) {
@@ -84,6 +91,7 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
 
     switch (astree_item.type()) {
       case NodeType::builtin_directive:
+        // exit directive implementation
         if (astree_item.value() == "exit" && peek_ast(contents, i, 1).type() == NodeType::expression) {
           i++;
           expression_to_rax(contents[i], asm_m);
@@ -91,11 +99,13 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
           asm_m.add_instr_main("mov eax, 60");
           asm_m.add_instr_main("syscall");
         }
+        // return directive implementation
         else if (astree_item.value() == "return" && peek_ast(contents, i, 1).type() == NodeType::expression) {
          i++;
           expression_to_rax(contents[i], asm_m);
           asm_m.add_instr_main("jmp _hy_main_ret");
         }
+        // let directive implementation
         else if (astree_item.value() == "let" && peek_ast(contents, i, 1).type() == NodeType::identifier && peek_ast(contents, i, 2).type() == NodeType::expression) {
           i++;
           std::string ident = contents[i].value();
@@ -120,6 +130,32 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
           locale << "mov " << word_type << " [rbp-" << loc.offset+loc.size << "], eax";
           asm_m.add_instr_main(locale.str());
         }
+        // let directive implementation
+        else if (astree_item.value() == "set" && peek_ast(contents, i, 1).type() == NodeType::identifier && peek_ast(contents, i, 2).type() == NodeType::expression) {
+          i++;
+          std::string ident = contents[i].value();
+          i++;
+
+          size_t type = expression_to_rax(contents[i], asm_m);
+
+          Mem_location loc = asm_m.get_local_var(ident);
+
+          std::string word_type = "Undefined please nasm throw an error";
+
+          switch (type) {
+            case 4:
+              word_type = "";
+              break;
+          case 8:
+              word_type = "QWORD";
+              break;
+          }
+
+          std::stringstream locale;
+          locale << "mov " << word_type << " [rbp-" << loc.offset+loc.size << "], eax";
+          asm_m.add_instr_main(locale.str());
+        }
+        // print directive implementation
         else if (astree_item.value() == "print" && peek_ast(contents, i, 1).type() == NodeType::expression) {
           i++;
           asm_m.add_instr_text("printf", "extern printf");
@@ -137,7 +173,6 @@ void process_statement(AST& astree, ASM_manager& asm_m) {
               asm_m.add_instr_data(fmt, fmt+"    db \"%lld\", 10, 0");
               break;
           }
-
 
           asm_m.add_instr_main("mov rsi, rax");
           asm_m.add_instr_main("mov rdi, _hy_fmt_digit");

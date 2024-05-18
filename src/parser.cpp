@@ -95,7 +95,7 @@ void AST::parse_statement(std::vector<Token> tokens_arg) {
     case TokenType::builtin_directive:
       directive.set_base_token(NodeType::builtin_directive, token_p.value);
       content.push_back(directive);
-      if (token_p.value == "let") {
+      if (token_p.value == "let" || token_p.value == "set") {
         next();
         if (token_p.type != TokenType::identifier) {
           std::cout << "Expected identifier not '" << token_p.value <<"'" << std::endl;

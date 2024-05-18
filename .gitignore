@@ -7,3 +7,4 @@ hydro
 obj/
 test_build/
 asm_test/
+*out*
